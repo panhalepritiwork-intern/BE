@@ -1,18 +1,16 @@
 import { Request, Response } from "express";
 import Task from "../models/Task";
 
-//Tasks for logged-in user
 export const getTasks = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.uid; // Firebase UID
-    const tasks = await Task.find({ user: userId }); 
+    const userId = (req as any).user.uid;
+    const tasks = await Task.find({ user: userId });
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Error fetching tasks" });
   }
 };
 
-//Task by ID
 export const getTaskById = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.uid;
@@ -26,14 +24,14 @@ export const getTaskById = async (req: Request, res: Response) => {
   }
 };
 
-//Create new task (attach Firebase UID)
 export const createTask = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.uid;
-    const { title, status } = req.body;
+    const { title, description, status } = req.body;
 
     const task = new Task({
       title,
+      description: description || "",
       status: status || "pending",
       user: userId,
     });
@@ -45,13 +43,14 @@ export const createTask = async (req: Request, res: Response) => {
   }
 };
 
-//Update task
 export const updateTask = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.uid;
+    const { title, description, status } = req.body;
+
     const task = await Task.findOneAndUpdate(
       { _id: req.params.id, user: userId },
-      req.body,
+      { title, description, status },
       { new: true }
     );
 
@@ -63,7 +62,6 @@ export const updateTask = async (req: Request, res: Response) => {
   }
 };
 
-//Delete task
 export const deleteTask = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.uid;
