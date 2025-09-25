@@ -10,7 +10,6 @@ import { verifyFirebaseToken } from "../middleware/verifyFirebaseToken";
 
 const router = express.Router();
 
-//Firebase Auth
 router.use(verifyFirebaseToken);
 
 router.get("/", getTasks);
