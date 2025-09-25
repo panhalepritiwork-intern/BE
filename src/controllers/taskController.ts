@@ -1,76 +1,78 @@
-import { Request, Response } from "express";
 import Task from "../models/Task";
 
-export const getTasks = async (req: Request, res: Response) => {
+export const getTasks = async (req: any, res: any) => {
   try {
-    const userId = (req as any).user.uid;
-    const tasks = await Task.find({ user: userId });
+    console.log("Fetching tasks for user:", req.user.uid);
+    const tasks = await Task.find({ user: req.user.uid });
     res.json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching tasks" });
+  } catch (err: any) {
+    console.log("Error in getTasks:", err);
+    res.json({ error: "Could not fetch tasks" });
   }
 };
 
-export const getTaskById = async (req: Request, res: Response) => {
+export const getTaskById = async (req: any, res: any) => {
   try {
-    const userId = (req as any).user.uid;
-    const task = await Task.findOne({ _id: req.params.id, user: userId });
-
-    if (!task) return res.status(404).json({ message: "Task not found" });
-
+    console.log("Fetching single task:", req.params.id);
+    const task = await Task.findOne({ _id: req.params.id, user: req.user.uid });
+    if (!task) {
+      return res.json({ error: "Task not found" });
+    }
     res.json(task);
-  } catch (error) {
-    res.status(400).json({ message: "Invalid task ID" });
+  } catch (err: any) {
+    console.log("Error in getTaskById:", err);
+    res.json({ error: "Invalid task id" });
   }
 };
 
-export const createTask = async (req: Request, res: Response) => {
+export const createTask = async (req: any, res: any) => {
   try {
-    const userId = (req as any).user.uid;
-    const { title, description, status } = req.body;
-
+    console.log("Creating task for:", req.user.uid);
     const task = new Task({
-      title,
-      description: description || "",
-      status: status || "pending",
-      user: userId,
+      title: req.body.title,
+      description: req.body.description || "",
+      status: req.body.status || "pending",
+      user: req.user.uid,
     });
-
     await task.save();
-    res.status(201).json(task);
-  } catch (error) {
-    res.status(500).json({ message: "Error creating task" });
+    res.json(task);
+  } catch (err: any) {
+    console.log("Error in createTask:", err);
+    res.json({ error: "Something went wrong while creating task" });
   }
 };
 
-export const updateTask = async (req: Request, res: Response) => {
+export const updateTask = async (req: any, res: any) => {
   try {
-    const userId = (req as any).user.uid;
-    const { title, description, status } = req.body;
-
+    console.log("Updating task:", req.params.id);
     const task = await Task.findOneAndUpdate(
-      { _id: req.params.id, user: userId },
-      { title, description, status },
+      { _id: req.params.id, user: req.user.uid },
+      {
+        title: req.body.title,
+        description: req.body.description,
+        status: req.body.status,
+      },
       { new: true }
     );
-
-    if (!task) return res.status(404).json({ message: "Task not found" });
-
+    if (!task) return res.json({ error: "Task not found" });
     res.json(task);
-  } catch (error) {
-    res.status(500).json({ message: "Error updating task" });
+  } catch (err: any) {
+    console.log("Error in updateTask:", err);
+    res.json({ error: "Could not update task" });
   }
 };
 
-export const deleteTask = async (req: Request, res: Response) => {
+export const deleteTask = async (req: any, res: any) => {
   try {
-    const userId = (req as any).user.uid;
-    const task = await Task.findOneAndDelete({ _id: req.params.id, user: userId });
-
-    if (!task) return res.status(404).json({ message: "Task not found" });
-
+    console.log("Deleting task:", req.params.id);
+    const task = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.uid,
+    });
+    if (!task) return res.json({ error: "Task not found" });
     res.json({ message: "Task deleted" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting task" });
+  } catch (err: any) {
+    console.log("Error in deleteTask:", err);
+    res.json({ error: "Could not delete task" });
   }
 };

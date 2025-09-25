@@ -1,23 +1,36 @@
-import { Request, Response } from "express";
 import User from "../models/User";
 
-export const getUsers = async (req: Request, res: Response) => {
-  const users = await User.find();
-  res.json(users);
-};
-
-export const getUserById = async (req: Request, res: Response) => {
+export const getUsers = async (req: any, res: any) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ message: "Invalid user ID" });
+    console.log("Fetching users...");
+    const users = await User.find();
+    res.json(users);
+  } catch (err: any) {
+    console.log("Error in getUsers:", err);
+    res.json({ error: "Could not fetch users" });
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
-  const user = new User(req.body);
-  await user.save();
-  res.status(201).json(user);
+export const getUserById = async (req: any, res: any) => {
+  try {
+    console.log("Fetching user by id:", req.params.id);
+    const user = await User.findById(req.params.id);
+    if (!user) return res.json({ error: "User not found" });
+    res.json(user);
+  } catch (err: any) {
+    console.log("Error in getUserById:", err);
+    res.json({ error: "Invalid user id" });
+  }
+};
+
+export const createUser = async (req: any, res: any) => {
+  try {
+    console.log("Creating user...");
+    const user = new User(req.body);
+    await user.save();
+    res.json(user);
+  } catch (err: any) {
+    console.log("Error in createUser:", err);
+    res.json({ error: "Could not create user" });
+  }
 };
