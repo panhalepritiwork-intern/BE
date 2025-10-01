@@ -1,7 +1,6 @@
 import User from "../models/User";
 import admin from "../config/firebaseAdmin";
 
-
 export const getUsers = async (req: any, res: any) => {
   try {
     console.log("Fetching users...");
@@ -12,7 +11,6 @@ export const getUsers = async (req: any, res: any) => {
     res.status(500).json({ error: "Could not fetch users" });
   }
 };
-
 
 export const getUserById = async (req: any, res: any) => {
   try {
@@ -26,11 +24,18 @@ export const getUserById = async (req: any, res: any) => {
   }
 };
 
-
 export const createUser = async (req: any, res: any) => {
   try {
     console.log("Creating user...");
-    const user = new User(req.body);
+    const { name, email, role, firebaseUid } = req.body;
+
+    const user = new User({
+      name,
+      email,
+      role: role || "user",
+      firebaseUid, 
+    });
+
     await user.save();
     res.status(201).json(user);
   } catch (err: any) {
@@ -39,19 +44,28 @@ export const createUser = async (req: any, res: any) => {
   }
 };
 
-
 export const setUserRole = async (req: any, res: any) => {
   try {
-    const { uid, role } = req.body;
+    const { uid, role } = req.body; 
 
     if (!uid || !role) {
       return res.status(400).json({ error: "uid and role are required" });
     }
 
-    
+    const dbUser = await User.findOne({ firebaseUid: uid });
+    if (!dbUser) {
+      return res.status(404).json({ error: "User not found in DB" });
+    }
+
     await admin.auth().setCustomUserClaims(uid, { role });
 
-    res.json({ message: `Role '${role}' assigned to user ${uid}` });
+    dbUser.role = role;
+    await dbUser.save();
+
+    res.json({
+      message: `Role '${role}' assigned to user ${dbUser.email}`,
+      user: dbUser,
+    });
   } catch (err: any) {
     console.error("Error setting user role:", err);
     res.status(500).json({ error: "Could not set role" });
