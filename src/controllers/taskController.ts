@@ -1,50 +1,51 @@
 import Task from "../models/Task";
+import { generateTaskDescription } from "../services/geminiService"; 
 
 export const getTasks = async (req: any, res: any) => {
   try {
-    console.log("Fetching tasks for user:", req.user.uid);
     const tasks = await Task.find({ user: req.user.uid });
     res.json(tasks);
   } catch (err: any) {
-    console.log("Error in getTasks:", err);
     res.json({ error: "Could not fetch tasks" });
   }
 };
 
 export const getTaskById = async (req: any, res: any) => {
   try {
-    console.log("Fetching single task:", req.params.id);
     const task = await Task.findOne({ _id: req.params.id, user: req.user.uid });
     if (!task) {
       return res.json({ error: "Task not found" });
     }
     res.json(task);
   } catch (err: any) {
-    console.log("Error in getTaskById:", err);
     res.json({ error: "Invalid task id" });
   }
 };
 
 export const createTask = async (req: any, res: any) => {
   try {
-    console.log("Creating task for:", req.user.uid);
+    let { title, description, status } = req.body;
+
+    if (!description || description.trim() === "") {
+      description = await generateTaskDescription(title);
+    }
+
     const task = new Task({
-      title: req.body.title,
-      description: req.body.description || "",
-      status: req.body.status || "pending",
+      title,
+      description,
+      status: status || "pending",
       user: req.user.uid,
     });
+
     await task.save();
-    res.json(task);
+    return res.status(201).json(task);
   } catch (err: any) {
-    console.log("Error in createTask:", err);
-    res.json({ error: "Something went wrong while creating task" });
+    res.status(500).json({ error: "Something went wrong while creating task" });
   }
 };
 
 export const updateTask = async (req: any, res: any) => {
   try {
-    console.log("Updating task:", req.params.id);
     const task = await Task.findOneAndUpdate(
       { _id: req.params.id, user: req.user.uid },
       {
@@ -57,14 +58,12 @@ export const updateTask = async (req: any, res: any) => {
     if (!task) return res.json({ error: "Task not found" });
     res.json(task);
   } catch (err: any) {
-    console.log("Error in updateTask:", err);
     res.json({ error: "Could not update task" });
   }
 };
 
 export const deleteTask = async (req: any, res: any) => {
   try {
-    console.log("Deleting task:", req.params.id);
     const task = await Task.findOneAndDelete({
       _id: req.params.id,
       user: req.user.uid,
@@ -72,7 +71,6 @@ export const deleteTask = async (req: any, res: any) => {
     if (!task) return res.json({ error: "Task not found" });
     res.json({ message: "Task deleted" });
   } catch (err: any) {
-    console.log("Error in deleteTask:", err);
     res.json({ error: "Could not delete task" });
   }
 };
